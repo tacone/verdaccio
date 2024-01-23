@@ -1,0 +1,13 @@
+version: '3.4'
+services:
+  verdaccio:
+    restart: always
+    image: verdaccio/verdaccio
+    container_name: verdaccio
+    user:  $UID:$GID
+    environment:
+      VERDACCIO_PORT: ${VERDACCIO_PORT}
+    ports:
+      - ${VERDACCIO_PORT}:${VERDACCIO_PORT}
+    volumes:
+      - ./data:/verdaccio/storage:rw
