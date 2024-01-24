@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# ------------------------------------------------------------------
+# This script deploys the application to production
+#
+# example:
+#
+# scripts/deploy
+# ------------------------------------------------------------------
+
+set -e
+
+trap 'catch_err' ERR
+
+catch_err() {
+  echo
+  echo "[ERROR] Deployment failed"
+  exit 1
+}
+
+SCRIPTS=$(realpath $(dirname "$0"))
+ROOT=$(realpath $SCRIPTS/..)
+
+cd $ROOT
+
+source $ROOT/.env
+
+# check DEPLOY_SSH variable is non-empty
+if [ -z "$DEPLOY_SSH" ]; then
+    echo "DEPLOY_SSH variable is not set"
+    exit 1
+fi
+
+# check DEPLOY_PATH variable is non-empty
+
+if [ -z "$DEPLOY_PATH" ]; then
+    echo "DEPLOY_PATH variable is not set"
+    exit 1
+fi
+
+# save the timestamp into a variable
+start_time=$(date +%s)
+
+echo
+echo -e "Deploying the code"
+echo -e "\n-- connecting\n"
+
+DEPLOY_SCRIPT=""
+DEPLOY_SCRIPT="$DEPLOY_SCRIPT""cd $DEPLOY_PATH"
+DEPLOY_SCRIPT="$DEPLOY_SCRIPT"' && echo -e "-- pulling the code..\n"'
+DEPLOY_SCRIPT="$DEPLOY_SCRIPT"' && git pull'
+DEPLOY_SCRIPT="$DEPLOY_SCRIPT"' && echo -e "\n-- building docker images..\n"'
+DEPLOY_SCRIPT="$DEPLOY_SCRIPT"' && ./scripts/live up --build -d --force-recreate'
+DEPLOY_SCRIPT="$DEPLOY_SCRIPT"' && echo -e "\n-- build completed, containers restarted\n"'
+
+$DEPLOY_SSH $DEPLOY_SCRIPT
+
+end_time=$(date +%s)
+execution_time=$((end_time - start_time))
+
+echo ""
+echo "---------------- Deployment finished -------------"
+echo " Application deployed in: $execution_time seconds"
+echo "--------------------------------------------------"
+echo ""
+
+$DEPLOY_SSH "cd $DEPLOY_PATH && ./scripts/live logs -n10 -f"

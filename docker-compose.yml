@@ -4,7 +4,7 @@ services:
     restart: always
     image: verdaccio/verdaccio
     container_name: verdaccio
-    user:  $UID:$GID
+    user:  $USER_ID:$USER_ID
     environment:
       VERDACCIO_PORT: ${VERDACCIO_PORT}
     ports:
